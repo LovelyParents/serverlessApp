@@ -1,0 +1,64 @@
+name: MainDeploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Step 3: Install the Serverless Framework
+      - name: Install Serverless Framework
+        run: npm install -g serverless@4
+
+      # Step 4: Install dependencies
+      - name: Install Dependencies
+        run: npm ci
+        
+      # Step 5: Configure AWS credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          
+      # Step 6: Deploy using Serverless with debug
+      # - name: Check if Serverless Access Key is set
+      #   run: echo ${{ secrets.SERVERLESS_ACCESS_KEY }}
+      - name: Serverless Deploy
+        env:
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+          SLS_INTERACTIVE_SETUP_ENABLE: 0
+        run: serverless deploy
+
+      # Step 7: Clean up old Lambda versions
+      - name: Clean up old Lambda versions
+        env:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+        run: |
+          FUNCTIONS=$(aws lambda list-functions --query 'Functions[].FunctionName' --output text)
+          for FUNCTION_NAME in $FUNCTIONS; do
+            echo "Processing function: $FUNCTION_NAME"
+            LATEST_VERSION=$(aws lambda list-versions-by-function --function-name $FUNCTION_NAME --query 'Versions[-1].Version' --output text)
+            VERSIONS=$(aws lambda list-versions-by-function --function-name $FUNCTION_NAME --query 'Versions[?Version!="$LATEST_VERSION"].Version' --output text)
+            for VERSION in $VERSIONS; do
+              echo "Deleting version: $VERSION for function: $FUNCTION_NAME"
+              aws lambda delete-function --function-name $FUNCTION_NAME --qualifier $VERSION || echo "Skipping deletion of version $VERSION"
+            done
+          done
