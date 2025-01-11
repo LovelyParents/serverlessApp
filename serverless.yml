@@ -10,21 +10,8 @@ provider:
   runtime: nodejs20.x
   region: us-east-1
   deploymentMethod: direct
-  apiGateway:
-    binaryMediaTypes:
-      - "*/*"
-  httpApi:
-    cors: true
 functions:
-  hello:
-    handler: handler.hello
+  api:
+    handler: handler.handler
     events:
-      - httpApi:
-          path: /
-          method: get
-  sai:
-    handler: handler.sai
-    events:
-      - httpApi:
-          path: /sai
-          method: get
+      - httpApi: "*"

@@ -1,17 +1,29 @@
-exports.hello = async (event) => {
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      message: "My home route check",
-    }),
-  };
-};
+const serverless = require("serverless-http");
+const express = require("express");
+const app = express();
 
-exports.sai = async (event) => {
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      message: "sai kumar deployed!",
-    }),
-  };
-};
+app.get("/", (req, res, next) => {
+  return res.status(200).json({
+    message: "Hello from root!",
+  });
+});
+
+app.get("/hello", (req, res, next) => {
+  return res.status(200).json({
+    message: "Hello from path!",
+  });
+});
+
+app.get("/gangsai", (req, res, next) => {  
+  return res.status(200).json({
+    message: "Gangasai kumar created route.!",
+  });
+});
+
+app.use((req, res, next) => {
+  return res.status(404).json({
+    error: "Not Found",
+  });
+});
+
+exports.handler = serverless(app);
