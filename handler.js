@@ -10,13 +10,13 @@ app.get("/", (req, res) => {
 
 app.get("/getTodos", (req, res, next) => {
   return res.status(200).json({
-    message: "Hello from path!",
+    message: {"todo1": "Learn Serverless", "todo2": "Learn AWS Lambda"},
   });
 });
 
 app.get("/getTodo/:todoId", (req, res, next) => {  
   return res.status(200).json({
-    message: "req.params.todoId",
+    message: req.params.todoId,
   });
 });
 
